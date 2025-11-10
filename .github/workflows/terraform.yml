@@ -1,11 +1,11 @@
-name: Terraform Deploy
+name: Terraform + Ansible Deploy
 
 on:
   push:
   pull_request:
 
 jobs:
-  terraform:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +25,30 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
-        run: terraform plan
-
       - name: Terraform Apply
+        id: apply
         run: terraform apply -auto-approve
+
+      # Capture public IP from Terraform output
+      - name: Get Instance IP
+        id: ip
+        run: echo "IP=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
+
+      # Create SSH key for Ansible
+      - name: Add SSH Key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      # Generate hosts.ini dynamically
+      - name: Create dynamic hosts file
+        run: |
+          echo "[web]" > hosts.ini
+          echo "$IP ansible_user=ubuntu ansible_ssh_private_key_file=./key.pem" >> hosts.ini
+
+      # Run Ansible playbook
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i hosts.ini playbook.yml
