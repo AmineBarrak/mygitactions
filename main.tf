@@ -19,13 +19,22 @@ provider "aws" {
 ##############################
 resource "aws_security_group" "demo_sg" {
   name_prefix = "demo-sg-"
-  description = "Allow HTTP inbound traffic"
+  description = "Allow SSH and HTTP inbound traffic"
 
+  # SSH (required for Ansible)
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+
+  # HTTP for Web Server
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # terrascans warns: open to world
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
