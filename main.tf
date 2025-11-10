@@ -57,7 +57,8 @@ resource "aws_instance" "demo_ec2" {
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.demo_sg.id]
 
-  # Fix Ter rascan security warnings:
+  key_name = "terraform"
+
   monitoring = true
 
   metadata_options {
