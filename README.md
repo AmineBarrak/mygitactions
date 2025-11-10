@@ -1,2 +1,3 @@
 # mygitactions
-testing github actions in class
+
+testing GitHub Actions in class
