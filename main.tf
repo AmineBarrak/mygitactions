@@ -1,9 +1,22 @@
-# Step 1: Specify the AWS Provider
+##############################
+# Terraform + AWS Provider
+##############################
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 provider "aws" {
   region = "us-east-1"
 }
 
-# Step 2: Create a Security Group (HTTP only)
+##############################
+# Security Group (allow HTTP)
+##############################
 resource "aws_security_group" "demo_sg" {
   name_prefix = "demo-sg-"
   description = "Allow HTTP inbound traffic"
@@ -12,7 +25,7 @@ resource "aws_security_group" "demo_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] # terrascans warns: open to world
   }
 
   egress {
@@ -27,18 +40,31 @@ resource "aws_security_group" "demo_sg" {
   }
 }
 
-# Step 3: Launch the EC2 Instance (no SSH key needed)
+##############################
+# EC2 Instance
+##############################
 resource "aws_instance" "demo_ec2" {
-  ami                    = "ami-08c40ec9ead489470"  # Ubuntu 22.04 LTS (us-east-1)
+  ami                    = "ami-08c40ec9ead489470" # Ubuntu 22.04 LTS (us-east-1)
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.demo_sg.id]
+
+  # Fix Ter rascan security warnings:
+  monitoring = true
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"  # Forces IMDSv2
+    http_put_response_hop_limit = 1
+  }
 
   tags = {
     Name = "Terraform-Demo-EC2"
   }
 }
 
-# Step 4: Outputs
+##############################
+# Output: EC2 Public IP
+##############################
 output "instance_public_ip" {
   description = "Public IP of the EC2 instance"
   value       = aws_instance.demo_ec2.public_ip
